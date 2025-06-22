@@ -3,23 +3,25 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using ReactApp1.Server.DTO;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+
 namespace ReactApp1.Server
 {
-    public class Program//обязательно посмотреть порядок middleware
+    public class Program
     {
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            //Подключение к бд Users
+            // РќР°СЃС‚СЂРѕР№РєР° Р±Р°Р·С‹ РґР°РЅРЅС‹С…
             builder.Services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(builder.Configuration.GetConnectionString("DbUsersConnection")));
+                options.UseNpgsql(builder.Configuration.GetConnectionString("DbUsersConnection")));
 
-            // Добавляем аутентификацию JWT
+            // РќР°СЃС‚СЂРѕР№РєР° Р°СѓС‚РµРЅС‚РёС„РёРєР°С†РёРё JWT
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
@@ -36,44 +38,43 @@ namespace ReactApp1.Server
                     };
                 });
 
-            builder.Services.AddAuthorization();//Добавляем авторизацию
-            //Поддержка контроллеров
+            builder.Services.AddAuthorization();
             builder.Services.AddControllers();
 
-            builder.Services.AddOpenApi();
-
-
+            // Р—Р°РјРµРЅР° AddOpenApi РЅР° Swagger
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+            });
 
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("ReactPolicy", builder =>
                 {
-                    builder.WithOrigins("https://localhost:57112") // React-порт
+                    builder.WithOrigins("https://localhost:57112")
                            .AllowAnyHeader()
                            .AllowAnyMethod()
-                           .AllowCredentials(); // Если используете куки/авторизацию
+                           .AllowCredentials();
                 });
             });
 
             var app = builder.Build();
 
             app.UseDefaultFiles();
-            app.MapStaticAssets();
+            app.UseStaticFiles(); // Р—Р°РјРµРЅР° MapStaticAssets
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-                app.MapOpenApi();
+                app.UseSwagger(); // Р—Р°РјРµРЅР° MapOpenApi
+                app.UseSwaggerUI();
             }
 
-            //app.UseHttpsRedirection();
             app.UseCors("ReactPolicy");
-            app.UseAuthentication(); // Включение аутентификации
-            app.UseAuthorization(); // Включение авторизации
+            app.UseAuthentication();
+            app.UseAuthorization();
 
-            //Перенаправляет действия в контроллеры
             app.MapControllers();
-
             app.MapFallbackToFile("/index.html");
 
             app.Run();
