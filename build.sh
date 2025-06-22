@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Установка .NET 9.0
-curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --version 9.0.100-preview.7
+curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --version 8.0.204
 
 # Добавляем .NET в PATH
 export PATH="$HOME/.dotnet:$PATH"
